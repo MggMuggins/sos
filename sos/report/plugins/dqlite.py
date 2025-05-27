@@ -109,7 +109,7 @@ class dqlite(Plugin, IndependentPlugin):
         queries = [{
             "query": "SELECT * FROM sqlite_master WHERE type=\"table\";",
             "table": "schema",  # Table name will be used in filename
-        },]
+        }]
 
         if pkg not in ("lxd",):
             queries.extend([
@@ -246,15 +246,25 @@ class dqlite(Plugin, IndependentPlugin):
             )
         )
 
-        packages = {
-            "microceph": {
-                "db_path": "/var/snap/microceph/common/state/database",
-                "socket": "/var/snap/microceph/common/state/control.socket",
-                "sql_cmd": "microceph cluster sql",
-                "socket_endpoint": "microceph/core/internal/sql",
-                "collection": self.microceph_collection,
-                "predicate": None,
+        microceph = microcluster_package("microceph", self.microceph_collection)
+        microceph["sql_command"] = "microceph cluster sql"
+        microceph["queries"].extend([
+            {
+                "query": "SELECT * FROM disks;",
+                "table": "disks",
             },
+            {
+                "query": "SELECT * FROM client_config;",
+                "table": "client_config",
+            },
+            {
+                "query": "SELECT * FROM remote;",
+                "table": "remote",
+            },
+        ])
+
+        packages = {
+            "microceph": microceph,
             "microovn": {
                 "db_path": "/var/snap/microovn/common/state/database",
                 "socket": "/var/snap/microovn/common/state/control.socket",
@@ -294,5 +304,32 @@ class dqlite(Plugin, IndependentPlugin):
             if self.is_installed(pkg):
                 self.base_collection(pkg, config)
                 config.get("collection")(pkg, config)
+
+
+def microcluster_package(name: str, collection):
+    return {
+        "db_path": f"/var/snap/{name}/common/state/database",
+        "socket": f"/var/snap/{name}/common/state/control.socket",
+        "socket_endpoint": f"{name}/core/internal/sql",
+        "collection": collection,
+        "predicate": None,
+        "queries": [
+            {
+                "query": (
+                    "SELECT id, name, expiry_date "
+                    "FROM core_token_records;"
+                ),
+                "table": "token_records",
+            },
+            {
+                "query": (
+                    "SELECT id, name, address, schema_internal, "
+                    "schema_external, heartbeat, role, api_extensions "
+                    "FROM core_cluster_members;"
+                ),
+                "table": "core_cluster_members",
+            },
+        ]
+    }
 
 # vim: set et ts=4 sw=4 :
