@@ -8,7 +8,7 @@
 #
 # See the LICENSE file in the source distribution for further information.
 
-from sos.report.plugins import Plugin, UbuntuPlugin
+from sos.report.plugins import Plugin, UbuntuPlugin, dqlite_base_collection
 
 
 class MicroOVN(Plugin, UbuntuPlugin):
@@ -38,3 +38,10 @@ class MicroOVN(Plugin, UbuntuPlugin):
         self.add_cmd_output([
             f"microovn {subcmd}" for subcmd in microovn_subcmds
         ])
+
+        dqlite_base_collection(
+            self,
+            pkg=self.plugin_name,
+            db_path="/var/snap/microovn/common/state/database",
+            crt_dir="/var/snap/microovn/common/state",
+        )
