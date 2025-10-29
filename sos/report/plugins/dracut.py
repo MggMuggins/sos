@@ -22,7 +22,9 @@ class Dracut(Plugin, RedHatPlugin):
     def setup(self):
         self.add_copy_spec([
             "/etc/dracut.conf",
-            "/etc/dracut.conf.d"
+            "/etc/dracut.conf.d",
+            "/run/initramfs/rdsosreport.txt",
+            "/run/initramfs/init.log",  # only written with kernel cli rd.debug
         ])
 
         self.add_cmd_output([
